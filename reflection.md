@@ -67,7 +67,7 @@ All five identified issues have been resolved:
 | **`frequency="weekly"` respected** | Tasks are filtered by `plan_weekday` before scheduling; daily tasks always pass.                                                       |
 | **Priority validation**            | `Task.__post_init__` now raises a `ValueError` for invalid priority values instead of silently defaulting.                             |
 | **Owner preferences used**         | `owner.preferences` are now appended to the `reason` field for each `ScheduledTask`.                                                   |
-
+- Later updated the UML
 
 ---
 
