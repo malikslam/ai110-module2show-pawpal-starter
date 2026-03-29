@@ -26,6 +26,7 @@ class Pet:
     age: int
     health_notes: str = ""
     owner: Optional[Owner] = None
+    tasks: List["Task"] = field(default_factory=list)
 
 
 @dataclass
@@ -37,10 +38,16 @@ class Task:
     is_required: bool = False
     time_of_day_constraint: Optional[str] = None    # "morning" | "evening" | None
     frequency: str = "daily"                         # "daily" | "weekly"
+    completed: bool = False
 
     def __post_init__(self):
+        """Validate that priority is one of the accepted values."""
         if self.priority not in VALID_PRIORITIES:
             raise ValueError(f"Invalid priority '{self.priority}'. Must be one of {VALID_PRIORITIES}.")
+
+    def mark_complete(self):
+        """Mark this task as completed."""
+        self.completed = True
 
 
 @dataclass
@@ -56,9 +63,11 @@ class DailyPlan:
     skipped: List[Task] = field(default_factory=list)
 
     def total_time(self) -> int:
+        """Return the total scheduled time in minutes."""
         return sum(s.task.duration_minutes for s in self.scheduled)
 
     def explain(self) -> str:
+        """Return a formatted string summarizing the full daily plan."""
         lines = [f"Daily Plan — Total time: {self.total_time()} min\n"]
         for s in self.scheduled:
             lines.append(
@@ -73,15 +82,17 @@ class DailyPlan:
 
 
 class Scheduler:
-    def __init__(self, pet: Pet, tasks: List[Task], plan_weekday: Optional[str] = None):
+    def __init__(self, pet: Pet, plan_weekday: Optional[str] = None):
+        """Initialize the scheduler with a pet and an optional weekday for filtering weekly tasks."""
         if pet.owner is None:
             raise ValueError("Pet must have an Owner to determine available minutes.")
         self.pet = pet
-        self.tasks = tasks
+        self.tasks = pet.tasks
         self.available_minutes = pet.owner.available_minutes_per_day
         self.plan_weekday = plan_weekday  # e.g. "Monday" — used to filter weekly tasks
 
     def generate_plan(self) -> DailyPlan:
+        """Sort and schedule eligible tasks into a DailyPlan based on priority and time constraints."""
         plan = DailyPlan()
         remaining = self.available_minutes
 

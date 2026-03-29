@@ -12,6 +12,7 @@ classDiagram
         +int age
         +String health_notes
         +Owner owner
+        +List~Task~ tasks
     }
 
     class Task {
@@ -26,7 +27,6 @@ classDiagram
 
     class Scheduler {
         +Pet pet
-        +List~Task~ tasks
         +String plan_weekday
         +generate_plan() DailyPlan
     }
@@ -47,7 +47,7 @@ classDiagram
     Owner "1" --> "1" Pet : owns
     Pet "1" --> "1" Scheduler : used by
     Owner "1" --> "1" Scheduler : provides available_minutes
-    Task "many" --> "1" Scheduler : fed into
+    Pet "1" --> "many" Task : has
     Scheduler --> DailyPlan : generates
     DailyPlan "1" --> "many" ScheduledTask : contains
     DailyPlan "1" --> "many" Task : skips
