@@ -76,12 +76,36 @@ All five identified issues have been resolved:
 **a. Constraints and priorities**
 
 - What constraints does your scheduler consider (for example: time, priority, preferences)?
+### Constraints the scheduler considers
+
+The scheduler follows a deterministic set of rules to ensure tasks are placed correctly and efficiently:
+
+* **Required flag**
+  Required tasks are always scheduled first, regardless of priority.
+
+* **Priority**
+  Tasks are ordered within required and optional groups by priority: **high → medium → low**.
+
+* **Available time**
+  Tasks that exceed the remaining available minutes for the day are skipped.
+
+* **Time of day**
+  Tasks constrained to `morning` or `evening` are scheduled within their designated slots.
+  Tasks without a time constraint are scheduled starting from midday onward.
+
+* **Frequency**
+  Weekly tasks are only scheduled if their category matches `plan_weekday`.
+  Daily tasks are always eligible.
+
 - How did you decide which constraints mattered most?
+- Required status ranks above priority because a missed medication is more critical than a missed play session. Time constraints come next since a morning walk at 6 PM defeats the purpose. Priority breaks ties among the remaining tasks, and available time acts as the final hard cutoff — no overscheduling.
 
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
+ - The scheduler uses a greedy first-fit approach — it picks tasks in priority order and schedules each one if it fits in the remaining time, without looking ahead to find a more optimal combination. 
 - Why is that tradeoff reasonable for this scenario?
+ - For a daily pet care plan, simplicity and predictability matter more than perfect optimization. An owner doesn't need the mathematically ideal schedule — they need a clear, explainable plan they can follow. A greedy approach also runs instantly and always produces the same output for the same input, which makes it easy to test and trust. The downside (occasionally skipping a shorter low-priority task to fit a longer one) is an acceptable tradeoff for a single-pet, single-day use case.
 
 ---
 
