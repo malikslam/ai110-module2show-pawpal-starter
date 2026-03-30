@@ -114,12 +114,25 @@ The scheduler follows a deterministic set of rules to ensure tasks are placed co
 **a. How you used AI**
 
 - How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
+
+AI tools were used across every phase of this project. During design, AI helped draft the initial UML class structure and identify missing relationships — for example, pointing out that `Owner` should link directly to `Scheduler` rather than passing `available_minutes` as a redundant parameter. During implementation, AI was used to debug logic bottlenecks such as the broken `frequency == category` weekly filter and overlapping time slot cursors. During refactoring, AI suggested replacing `if/elif/else` recurrence logic with a `RECURRENCE_DELTA` dict lookup and consolidating duplicate status filter methods. For testing, AI identified critical edge cases like month rollover and exact-same-start-time conflicts, then helped draft the pytest functions.
+
 - What kinds of prompts or questions were most helpful?
+
+The most effective prompts were specific and tied to the actual code:
+- *"What are the missing relationships or logic bottlenecks in this implementation?"* — surfaced structural gaps not obvious from reading the code alone.
+- *"How could this algorithm be simplified for better readability or performance?"* — produced concrete refactor suggestions with clear tradeoffs.
+- *"What are the most important edge cases to test for a scheduler with sorting and recurring tasks?"* — generated a prioritized test plan rather than generic advice.
 
 **b. Judgment and verification**
 
 - Describe one moment where you did not accept an AI suggestion as-is.
+
+AI suggested replacing `0 if t.is_required else 1` in the sort key with `not t.is_required`. While technically equivalent, using `not` inside a tuple sort key requires mentally flipping a boolean to understand the ordering — the original explicit form is clearer for anyone reading the code later.
+
 - How did you evaluate or verify what the AI suggested?
+
+The suggestion was evaluated by asking: "Would a reader immediately understand what this sorts first?" The answer for `not t.is_required` was no — it reads as "not required goes first," which is the opposite of intent. The original was kept and the decision was documented.
 
 ---
 
@@ -128,12 +141,22 @@ The scheduler follows a deterministic set of rules to ensure tasks are placed co
 **a. What you tested**
 
 - What behaviors did you test?
+
+The test suite covers: task completion status (`mark_complete()`), pet task count growth, chronological sort correctness including empty and single-item lists, daily and weekly recurrence with correct `due_date` advancement, month/year rollover (March 31 → April 1), auto-appending of next occurrence to `pet.tasks`, and conflict detection for overlapping tasks, non-overlapping tasks, and exact same start times.
+
 - Why were these tests important?
+
+These tests target the behaviors most likely to silently fail — a recurrence off by one day, a sort that looks correct but isn't, or a conflict that goes undetected because of a `<` vs `<=` boundary. Catching these in tests prevents them from reaching the UI where they'd be invisible to the owner but wrong in output.
 
 **b. Confidence**
 
 - How confident are you that your scheduler works correctly?
+
+⭐⭐⭐⭐ (4/5) — The scheduling logic, recurrence, sorting, and conflict detection are all well-covered by 12 passing tests including edge cases. Confidence is high for the backend.
+
 - What edge cases would you test next if you had more time?
+
+Completing the same task twice in one session, an owner with 0 available minutes, a pet with no tasks, and weekly tasks where `repeat_on` is not set — to verify graceful handling rather than silent failures.
 
 ---
 
@@ -143,10 +166,16 @@ The scheduler follows a deterministic set of rules to ensure tasks are placed co
 
 - What part of this project are you most satisfied with?
 
+The conflict detection and recurrence logic. Both required reasoning carefully about time arithmetic and state — `detect_conflicts()` correctly groups tasks by slot to avoid false positives across morning/evening boundaries, and `next_occurrence()` handles month rollover cleanly because `timedelta` manages it automatically. Getting both working correctly and covered by tests felt like the strongest part of the build.
+
 **b. What you would improve**
 
 - If you had another iteration, what would you improve or redesign?
 
+The Streamlit UI has no automated tests — all session state behavior is verified manually. I'd add integration tests using `streamlit.testing` to cover form submissions, the Save Owner/Pet flow, and the conflict warning display. I'd also redesign the task table to support inline editing rather than requiring a full clear-and-re-add cycle.
+
 **c. Key takeaway**
 
 - What is one important thing you learned about designing systems or working with AI on this project?
+
+AI is most useful when you already understand the problem well enough to evaluate its suggestions. The moments where I got the most value were not when I asked AI to write code from scratch, but when I used it to pressure-test a design I'd already drafted — asking "what's missing?" or "what could go wrong?" gave better results than "write this for me."

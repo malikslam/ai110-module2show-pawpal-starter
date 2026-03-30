@@ -50,9 +50,6 @@ if st.button("Save Pet"):
             health_notes=health_notes,
             owner=st.session_state.owner
         )
-        # Preserve existing tasks if pet is re-saved
-        if "tasks" not in st.session_state:
-            st.session_state.tasks = []
 
 if "pet" in st.session_state:
     st.success(f"Pet saved: {st.session_state.pet.name} ({st.session_state.pet.species})")
@@ -97,12 +94,12 @@ with st.form("add_task_form", clear_on_submit=True):
 if "pet" in st.session_state and st.session_state.pet.tasks:
     st.write(f"**{len(st.session_state.pet.tasks)} task(s) added:**")
     st.table([{
-        "title": t.title,
-        "duration_minutes": t.duration_minutes,
-        "priority": t.priority,
-        "category": t.category,
-        "time_of_day_constraint": t.time_of_day_constraint,
-        "is_required": t.is_required,
+        "Title": t.title,
+        "Duration (min)": t.duration_minutes,
+        "Priority": t.priority,
+        "Category": t.category,
+        "Time of Day": t.time_of_day_constraint or "any",
+        "Required": "Yes" if t.is_required else "No",
     } for t in st.session_state.pet.tasks])
     if st.button("Clear all tasks"):
         st.session_state.pet.tasks = []
@@ -128,16 +125,42 @@ if st.button("Generate schedule", type="primary"):
         scheduler = Scheduler(pet=pet, plan_weekday=plan_weekday)
         plan = scheduler.generate_plan()
 
-        st.success(f"Schedule generated for {pet.name} — {plan.total_time()} min total")
+        # --- Conflict warnings — shown first so owner sees them immediately ---
+        conflicts = Scheduler.detect_conflicts([(pet.name, plan)])
+        if conflicts:
+            st.error("⚠️ Schedule Conflicts Detected")
+            for warning in conflicts:
+                st.warning(warning)
+            st.caption("These tasks overlap in time. Consider adjusting durations or time-of-day constraints.")
 
+        st.success(f"Schedule ready for {pet.name} — {plan.total_time()} min total")
+
+        # --- Scheduled tasks sorted chronologically ---
         if plan.scheduled:
             st.markdown("### Scheduled Tasks")
-            for s in plan.scheduled:
+            sorted_schedule = scheduler.sort_by_time(plan.scheduled)
+            rows = []
+            for s in sorted_schedule:
                 badge = "🔴" if s.task.priority == "high" else "🟡" if s.task.priority == "medium" else "🟢"
-                st.markdown(f"**{s.start_time}** {badge} {s.task.title} `{s.task.duration_minutes} min`")
-                st.caption(s.reason)
+                rows.append({
+                    "Time": s.start_time,
+                    "Priority": badge,
+                    "Task": s.task.title,
+                    "Duration (min)": s.task.duration_minutes,
+                    "Required": "Yes" if s.task.is_required else "No",
+                    "Reason": s.reason,
+                })
+            st.table(rows)
 
+        # --- Pending tasks ---
+        pending = plan.pending()
+        if pending:
+            with st.expander(f"Pending tasks ({len(pending)} remaining)", expanded=False):
+                for s in pending:
+                    st.markdown(f"- **{s.task.title}** at {s.start_time} ({s.task.duration_minutes} min)")
+
+        # --- Skipped tasks ---
         if plan.skipped:
-            st.markdown("### Skipped Tasks")
-            for t in plan.skipped:
-                st.markdown(f"- ~~{t.title}~~ ({t.duration_minutes} min — didn't fit)")
+            with st.expander(f"Skipped tasks ({len(plan.skipped)} didn't fit)", expanded=False):
+                for t in plan.skipped:
+                    st.markdown(f"- ~~{t.title}~~ — {t.duration_minutes} min (exceeds remaining time)")
