@@ -31,6 +31,30 @@ The scheduler goes beyond a simple task list with four algorithmic improvements:
 - **Recurring task auto-scheduling** — When `Scheduler.mark_task_complete()` is called, it automatically creates the next occurrence via `Task.next_occurrence()`, advancing `due_date` by 1 day (daily) or 7 days (weekly) using `timedelta`.
 - **Conflict detection** — `Scheduler.detect_conflicts()` scans one or more pets' plans for overlapping time windows within each slot (morning / midday / evening) and returns human-readable warnings without crashing the program.
 
+## Testing PawPal+
+
+### Run the tests
+
+```bash
+python -m pytest test_pawpal.py -v
+```
+
+### What the tests cover
+
+| Category | Tests |
+|---|---|
+| **Task status** | `mark_complete()` flips `completed` to `True`; adding tasks increases pet task count |
+| **Sorting** | Tasks added out of order are returned chronologically; single-task and empty-list edge cases handled without error |
+| **Recurrence** | Daily task produces a next occurrence due tomorrow; weekly task due in 7 days; month/year rollover (e.g. March 31 → April 1) works correctly |
+| **Auto-scheduling** | `Scheduler.mark_task_complete()` appends the next occurrence to `pet.tasks` with `completed=False` |
+| **Conflict detection** | Overlapping tasks in the same slot produce a warning; tasks in different slots do not; exact same start time is flagged |
+
+### Confidence Level
+
+⭐⭐⭐⭐ (4/5)
+
+The core scheduling logic — priority ordering, time slot assignment, recurrence, and conflict detection — is well covered by 12 passing tests including edge cases like month rollover and identical start times. One star is held back because the Streamlit UI layer (`app.py`) has no automated tests; session state behavior and form interactions are only verified manually.
+
 ## Getting started
 
 ### Setup
