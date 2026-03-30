@@ -73,22 +73,6 @@ python -m pytest test_pawpal.py -v
 
 The core scheduling logic — priority ordering, time slot assignment, recurrence, and conflict detection — is well covered by 12 passing tests including edge cases like month rollover and identical start times. One star is held back because the Streamlit UI layer (`app.py`) has no automated tests; session state behavior and form interactions are only verified manually.
 
-## AI Collaboration
-
-### How AI was used
-
-AI tools were used across every phase of this project:
-
-- **Design brainstorming** — Used AI to draft the initial UML class structure, identify missing relationships (e.g. `Owner` linked to `Scheduler`), and reason through which class should own the task list (`Pet.tasks` vs. dependency injection).
-- **Debugging** — Asked AI to spot logic bottlenecks such as the broken `frequency == category` weekly filter, double `strptime` parsing in conflict detection, and overlapping time slot cursors.
-- **Refactoring** — AI suggested simplifications like replacing `if/elif/else` recurrence logic with a `RECURRENCE_DELTA` dict, and consolidating duplicate status filter methods.
-- **Test generation** — Used AI to identify critical edge cases (month rollover, exact-same start time conflicts, empty task lists) and draft pytest functions covering them.
-
-### Most helpful prompts
-
-- *"What are the missing relationships or logic bottlenecks in this implementation?"* — surfaced structural gaps not obvious from reading the code.
-- *"How could this algorithm be simplified for better readability or performance?"* — produced concrete refactor suggestions with tradeoffs explained.
-- *"What are the most important edge cases to test for a scheduler with sorting and recurring tasks?"* — generated a prioritized test plan rather than generic suggestions.
 
 ## Getting started
 
